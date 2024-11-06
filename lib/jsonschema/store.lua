@@ -33,6 +33,10 @@ local function percent_unescape(x)
 end
 local tilde_unescape = { ['~0']='~', ['~1']='/' }
 local function urlunescape(fragment)
+  if ngx then
+    fragment = ngx.re.gsub(fragment, '%%(%x%x)', percent_unescape)
+    return ngx.re.gsub(fragment, '~[01]', tilde_unescape)
+  end
   return fragment:gsub('%%(%x%x)', percent_unescape):gsub('~[01]', tilde_unescape)
 end
 

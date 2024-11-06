@@ -41,11 +41,13 @@ end
 
 local match_pattern
 local rex_find
+local gsub
 if ngx then
   local function re_find(s, p)
     return ngx.re.find(s, p, "jo")
   end
   match_pattern = re_find
+  gsub = ngx.re.gsub
 else
   match_pattern = function (s, p)
     if not rex_find then
@@ -58,6 +60,7 @@ else
     end
     return rex_find(s, p)
   end
+  gsub = string.gsub
 end
 
 local parse_ipv4
@@ -107,7 +110,7 @@ function codectx_mt:libfunc(globalname)
   local root = self._root
   local localname = root._globals[globalname]
   if not localname then
-    localname = globalname:gsub('%.', '_')
+    localname = gsub(globalname, '%.', '_')
     root._globals[globalname] = localname
     root:preface(sformat('local %s = %s', localname, globalname))
   end
@@ -549,11 +552,11 @@ local function str_filter(s)
   s = string.format("%q", s)
   -- print(s)
   if s:find("\\\n", 1, true) then
-      s = string.gsub(s, "\\\n", "\\n")
+      s = gsub(s, "\\\n", "\\n")
   end
 
   if s:find("'", 1, true) then
-    s = string.gsub(s, ".?'", str_rep_quote)
+    s = gsub(s, ".?'", str_rep_quote)
   end
   return s
 end
@@ -951,7 +954,7 @@ generate_validator = function(ctx, schema)
     end
     if schema.pattern then
       ctx:stmt(sformat('  if not %s(%s, %q) then', ctx:libfunc('custom.match_pattern'), ctx:param(1), schema.pattern))
-      ctx:stmt(sformat('    return false, %s([[failed to match pattern %q with %%q]], %s)', ctx:libfunc('string.format'), string.gsub(schema.pattern, "%%", "%%%%"), ctx:param(1)))
+      ctx:stmt(sformat('    return false, %s([[failed to match pattern %q with %%q]], %s)', ctx:libfunc('string.format'), gsub(schema.pattern, "%%", "%%%%"), ctx:param(1)))
       ctx:stmt(        '  end')
     end
     ctx:stmt('end') -- if string
